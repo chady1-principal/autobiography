@@ -1,0 +1,1473 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>기억의 숲 - 나만의 디지털 자서전</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Google Fonts: Noto Serif KR for book feeling & Pretendard/Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700;800&family=Pretendard:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Pretendard', '-apple-system', 'sans-serif'],
+            serif: ['Nanum Myeongjo', 'serif'],
+          },
+          colors: {
+            book: {
+              bg: '#FAF7F2',
+              card: '#FFFFFF',
+              primary: '#3F352E',
+              accent: '#8C6843',
+              gold: '#C5A059',
+              muted: '#7A7269',
+              border: '#E8E1D5',
+              dark: '#1C1917'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* 인쇄 및 PDF 내보내기 전용 스타일 */
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+      #printBookArea, #printBookArea * {
+        visibility: visible;
+      }
+      #printBookArea {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        background: white !important;
+      }
+      .page-break {
+        page-break-after: always;
+        break-after: page;
+      }
+      .no-print {
+        display: none !important;
+      }
+    }
+
+    /* 감성적인 종이 질감 */
+    .paper-texture {
+      background-color: #FAF8F5;
+      background-image: radial-gradient(#E5DFD3 0.75px, transparent 0.75px);
+      background-size: 16px 16px;
+    }
+
+    /* 책 펼침 그림자 효과 */
+    .book-shadow {
+      box-shadow: -15px 0 35px rgba(0,0,0,0.06), 0 20px 30px -10px rgba(63,53,46,0.12);
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 5px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #D1C7B8;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body class="bg-book-bg text-book-primary font-sans min-h-screen flex flex-col antialiased selection:bg-amber-100">
+
+  <!-- 상단 네비게이션 헤더 -->
+  <header class="sticky top-0 z-40 bg-book-bg/90 backdrop-blur-md border-b border-book-border transition-all">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3 cursor-pointer" onclick="switchTab('feed')">
+        <div class="w-10 h-10 rounded-full bg-book-accent/15 flex items-center justify-center text-book-accent border border-book-accent/30 shadow-sm">
+          <i data-lucide="book-open" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <span class="font-serif font-bold text-lg text-book-primary tracking-tight">기억의 숲</span>
+          <span class="text-xs block text-book-muted tracking-widest font-sans font-medium">나만의 디지털 자서전</span>
+        </div>
+      </div>
+
+      <!-- 상단 탭 버튼 -->
+      <nav class="flex items-center space-x-1 sm:space-x-2">
+        <button id="navFeedBtn" onclick="switchTab('feed')" class="px-3 py-2 rounded-lg text-sm font-medium transition flex items-center gap-1.5 text-book-accent bg-amber-50/80">
+          <i data-lucide="compass" class="w-4 h-4"></i>
+          <span class="hidden sm:inline">오늘의 질문</span>
+        </button>
+        <button id="navWriteBtn" onclick="openWriteModal()" class="px-3 py-2 rounded-lg text-sm font-medium transition flex items-center gap-1.5 hover:bg-stone-200/50 text-stone-700">
+          <i data-lucide="pen-tool" class="w-4 h-4"></i>
+          <span class="hidden sm:inline">새 글쓰기</span>
+        </button>
+        <button id="navChaptersBtn" onclick="switchTab('chapters')" class="px-3 py-2 rounded-lg text-sm font-medium transition flex items-center gap-1.5 hover:bg-stone-200/50 text-stone-700">
+          <i data-lucide="library" class="w-4 h-4"></i>
+          <span class="hidden sm:inline">나의 서재</span>
+          <span id="entryCountBadge" class="ml-1 text-xs px-1.5 py-0.5 rounded-full bg-stone-200 text-stone-800">0</span>
+        </button>
+        <button id="navPublishBtn" onclick="switchTab('publish')" class="ml-2 px-3.5 py-2 rounded-lg text-sm font-medium text-white bg-book-accent hover:bg-amber-800 transition flex items-center gap-1.5 shadow-sm">
+          <i data-lucide="printer" class="w-4 h-4"></i>
+          <span>책 출판/인쇄</span>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- 메인 콘텐츠 영역 -->
+  <main class="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-6 pb-20">
+
+    <!-- 1. 오늘의 질문 & 데일리 피드 탭 -->
+    <section id="feedTab" class="space-y-8">
+      
+      <!-- 오늘의 하이라이트 배너 카드 -->
+      <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#382F27] to-[#54463A] text-white p-6 sm:p-8 shadow-xl">
+        <div class="absolute -right-10 -bottom-10 opacity-10 pointer-events-none">
+          <i data-lucide="feather" class="w-64 h-64"></i>
+        </div>
+        <div class="relative z-10 max-w-2xl space-y-3">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-white/15 text-amber-200 tracking-wide">
+            <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+            <span>오늘 당신에게 건네는 기억의 질문</span>
+          </div>
+          <h2 id="todayQuestionText" class="text-xl sm:text-2xl md:text-3xl font-serif font-bold leading-relaxed">
+            "어릴 적 골목길이나 동네에서 해질녘까지 함께 뛰어놀던 친구들의 이름을 기억하시나요?"
+          </h2>
+          <p id="todayQuestionDesc" class="text-stone-300 text-sm leading-relaxed">
+            시간이 흘러도 기억 속에 은은히 반짝이는 유년 시절의 노을과 따뜻했던 친구들과의 기억을 기록해보세요.
+          </p>
+          <div class="pt-3 flex flex-wrap items-center gap-3">
+            <button onclick="writeForCurrentDailyQuestion()" class="px-5 py-2.5 rounded-xl bg-book-gold hover:bg-amber-500 text-stone-900 font-medium text-sm transition flex items-center gap-2 shadow-md">
+              <i data-lucide="edit-3" class="w-4 h-4"></i>
+              <span>이 질문에 답하여 기록하기</span>
+            </button>
+            <button onclick="refreshDailyQuestion()" class="px-3.5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-sm transition flex items-center gap-1.5">
+              <i data-lucide="shuffle" class="w-4 h-4"></i>
+              <span>다른 질문 보기</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 인생 챕터별 질문 카테고리 -->
+      <div class="space-y-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="text-lg font-serif font-bold text-book-primary">생애 주기별 질문 탐색</h3>
+            <p class="text-xs text-book-muted">기록하고 싶은 인생의 장(Chapter)을 골라 이야기를 시작하세요.</p>
+          </div>
+          <div class="text-xs text-book-accent font-medium">총 <span id="totalQuestionsCount">40</span>개의 질문</div>
+        </div>
+
+        <!-- 챕터 필터 알약 버튼 -->
+        <div class="flex gap-2 overflow-x-auto pb-2 custom-scrollbar">
+          <button onclick="filterQuestions('all')" class="chapter-btn active px-4 py-1.5 rounded-full text-xs font-medium border border-book-border bg-book-accent text-white whitespace-nowrap">전체 질문</button>
+          <button onclick="filterQuestions('childhood')" class="chapter-btn px-4 py-1.5 rounded-full text-xs font-medium border border-book-border bg-white text-stone-600 hover:bg-stone-50 whitespace-nowrap">1장: 어린 시절 & 고향</button>
+          <button onclick="filterQuestions('youth')" class="chapter-btn px-4 py-1.5 rounded-full text-xs font-medium border border-book-border bg-white text-stone-600 hover:bg-stone-50 whitespace-nowrap">2장: 청춘과 학창시절</button>
+          <button onclick="filterQuestions('love')" class="chapter-btn px-4 py-1.5 rounded-full text-xs font-medium border border-book-border bg-white text-stone-600 hover:bg-stone-50 whitespace-nowrap">3장: 사랑, 결혼, 그리고 가족</button>
+          <button onclick="filterQuestions('work')" class="chapter-btn px-4 py-1.5 rounded-full text-xs font-medium border border-book-border bg-white text-stone-600 hover:bg-stone-50 whitespace-nowrap">4장: 일터와 치열했던 도전</button>
+          <button onclick="filterQuestions('wisdom')" class="chapter-btn px-4 py-1.5 rounded-full text-xs font-medium border border-book-border bg-white text-stone-600 hover:bg-stone-50 whitespace-nowrap">5장: 인생의 깨달음 & 후손에게</button>
+        </div>
+
+        <!-- 질문 카드 그리드 -->
+        <div id="questionsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <!-- JS로 동적 생성 -->
+        </div>
+      </div>
+
+      <!-- 최근 작성된 나의 기록 프리뷰 섹션 -->
+      <div class="pt-6 border-t border-book-border space-y-4">
+        <div class="flex items-center justify-between">
+          <h3 class="text-lg font-serif font-bold text-book-primary">최근 차곡차곡 쌓인 나의 글</h3>
+          <button onclick="switchTab('chapters')" class="text-xs text-book-accent hover:underline flex items-center gap-1 font-medium">
+            전체 서재 보기 <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+        <div id="recentEntriesFeed" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- JS로 최근 기록 카드 렌더링 -->
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. 나의 서재 및 타임라인 탭 -->
+    <section id="chaptersTab" class="hidden space-y-6">
+      <div class="bg-white rounded-2xl p-6 border border-book-border shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h2 class="text-xl font-serif font-bold text-book-primary">나의 자서전 서재</h2>
+          <p class="text-xs text-book-muted mt-1">지금까지 <span id="libraryStatCount" class="font-bold text-book-accent">0</span>편의 기억을 기록하셨습니다. 책으로 엮기에 충분한 여정입니다.</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <div class="relative">
+            <input id="searchInput" type="text" oninput="handleSearch()" placeholder="기록 검색 (제목, 내용, 태그)..." class="w-48 sm:w-64 pl-9 pr-3 py-2 text-xs rounded-xl border border-book-border focus:outline-none focus:ring-1 focus:ring-book-accent bg-stone-50">
+            <i data-lucide="search" class="w-4 h-4 text-stone-400 absolute left-3 top-2.5"></i>
+          </div>
+          <button onclick="openWriteModal()" class="px-4 py-2 rounded-xl bg-book-accent hover:bg-amber-800 text-white text-xs font-medium flex items-center gap-1.5 transition">
+            <i data-lucide="plus" class="w-4 h-4"></i>
+            <span>기록 추가</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 챕터별 필터 및 정렬 -->
+      <div class="flex items-center justify-between flex-wrap gap-2 text-xs">
+        <div class="flex items-center gap-2">
+          <span class="text-book-muted font-medium">챕터 분류:</span>
+          <select id="chapterFilterSelect" onchange="filterEntriesByChapter(this.value)" class="bg-white border border-book-border rounded-lg px-2.5 py-1.5 text-stone-700">
+            <option value="all">전체 챕터 보기</option>
+            <option value="childhood">1장: 어린 시절 & 고향</option>
+            <option value="youth">2장: 청춘과 학창시절</option>
+            <option value="love">3장: 사랑과 가족</option>
+            <option value="work">4장: 도전과 일</option>
+            <option value="wisdom">5장: 인생의 교훈</option>
+          </select>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-book-muted font-medium">정렬:</span>
+          <select id="sortOrderSelect" onchange="sortEntries(this.value)" class="bg-white border border-book-border rounded-lg px-2.5 py-1.5 text-stone-700">
+            <option value="timeline">연대기 순 (과거 → 현재)</option>
+            <option value="newest">최근 작성 순</option>
+            <option value="chapter">챕터 번호 순</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- 기록 리스트 / 책 목차 뷰 -->
+      <div id="entriesListContainer" class="space-y-4">
+        <!-- JS 렌더링 -->
+      </div>
+    </section>
+
+    <!-- 3. 책 출판 및 인쇄 프리뷰 탭 -->
+    <section id="publishTab" class="hidden space-y-8">
+      
+      <!-- 출판 컨트롤 패널 (인쇄 시 숨겨짐) -->
+      <div class="bg-white rounded-2xl p-6 border border-book-border shadow-sm no-print">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+          <div class="space-y-1">
+            <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-100 text-amber-800">책 출판 지원 스튜디오</span>
+            <h2 class="text-2xl font-serif font-bold text-book-primary">세상에 단 하나뿐인 나의 자서전 완성하기</h2>
+            <p class="text-xs text-book-muted">작성된 기록들을 모아 실제 출판 인쇄소에 맡기거나 PDF 전자책으로 보관할 수 있는 레이아웃으로 가공합니다.</p>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-3">
+            <button onclick="toggleCoverCustomizer()" class="px-4 py-2.5 rounded-xl border border-book-border hover:bg-stone-50 text-stone-700 text-xs font-medium flex items-center gap-1.5 transition">
+              <i data-lucide="palette" class="w-4 h-4"></i>
+              <span>표지 & 책 정보 편집</span>
+            </button>
+            <button onclick="exportJSONBackup()" class="px-3.5 py-2.5 rounded-xl border border-book-border hover:bg-stone-50 text-stone-700 text-xs font-medium flex items-center gap-1.5 transition" title="원고 데이터 안전 백업">
+              <i data-lucide="download" class="w-4 h-4"></i>
+              <span>데이터 백업</span>
+            </button>
+            <button onclick="printBook()" class="px-5 py-2.5 rounded-xl bg-book-primary hover:bg-stone-800 text-white text-xs font-medium flex items-center gap-2 shadow-lg transition">
+              <i data-lucide="printer" class="w-4 h-4"></i>
+              <span>PDF 저장 / 책 인쇄하기</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 표지 커스터마이저 모달형 아코디언 -->
+        <div id="coverCustomizerPanel" class="mt-6 pt-6 border-t border-book-border grid grid-cols-1 md:grid-cols-3 gap-4 hidden">
+          <div>
+            <label class="block text-xs font-medium text-stone-700 mb-1">책 제목</label>
+            <input id="bookTitleInput" type="text" value="나의 삶, 나의 이야기" oninput="updateBookMeta()" class="w-full text-xs rounded-lg border border-book-border p-2 bg-stone-50">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-stone-700 mb-1">부제 (Subtitle)</label>
+            <input id="bookSubtitleInput" type="text" value="바람과 세월이 남겨준 기억의 편린들" oninput="updateBookMeta()" class="w-full text-xs rounded-lg border border-book-border p-2 bg-stone-50">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-stone-700 mb-1">저자명 (나의 이름)</label>
+            <input id="bookAuthorInput" type="text" value="김영식" oninput="updateBookMeta()" class="w-full text-xs rounded-lg border border-book-border p-2 bg-stone-50">
+          </div>
+          <div class="md:col-span-2">
+            <label class="block text-xs font-medium text-stone-700 mb-1">발간사 / 헌정사 (서문)</label>
+            <textarea id="bookDedicationInput" rows="2" oninput="updateBookMeta()" class="w-full text-xs rounded-lg border border-book-border p-2 bg-stone-50">이 책을 사랑하는 나의 가족들과 지난 시간 함께 울고 웃었던 소중한 인연들에게 바칩니다.</textarea>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-stone-700 mb-1">표지 컬러 테마</label>
+            <div class="flex items-center gap-3 mt-1.5">
+              <button onclick="setCoverTheme('classic')" class="w-7 h-7 rounded-full bg-[#2C241E] border-2 border-amber-300 ring-2 ring-transparent focus:ring-amber-400"></button>
+              <button onclick="setCoverTheme('navy')" class="w-7 h-7 rounded-full bg-[#1B2A4A] border-2 border-stone-200"></button>
+              <button onclick="setCoverTheme('forest')" class="w-7 h-7 rounded-full bg-[#22392E] border-2 border-stone-200"></button>
+              <button onclick="setCoverTheme('cream')" class="w-7 h-7 rounded-full bg-[#EFE8DD] border-2 border-stone-400"></button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 실제 인쇄/PDF 대상 북 프리뷰 컨테이너 -->
+      <div id="printBookArea" class="max-w-3xl mx-auto space-y-12">
+
+        <!-- 1. 책 표지 (Book Cover) -->
+        <div id="bookCoverCard" class="w-full aspect-[1/1.414] bg-[#2C241E] text-amber-100 rounded-lg p-10 sm:p-16 flex flex-col justify-between book-shadow border border-stone-700 page-break relative overflow-hidden transition-colors">
+          <div class="absolute inset-4 border border-amber-400/30 pointer-events-none rounded"></div>
+          
+          <div class="space-y-4 pt-8">
+            <span class="text-xs uppercase tracking-widest text-amber-300/80 font-sans block">Memoir of Life</span>
+            <div class="w-12 h-0.5 bg-amber-400/60"></div>
+          </div>
+
+          <div class="my-auto text-center space-y-4 px-4">
+            <h1 id="previewBookTitle" class="text-3xl sm:text-4xl md:text-5xl font-serif font-bold tracking-tight text-white leading-tight">
+              나의 삶, 나의 이야기
+            </h1>
+            <p id="previewBookSubtitle" class="text-sm sm:text-base font-serif italic text-amber-200/90 font-light">
+              바람과 세월이 남겨준 기억의 편린들
+            </p>
+          </div>
+
+          <div class="text-center pb-6 space-y-1">
+            <p class="text-xs tracking-widest font-sans text-amber-300/70">지은이</p>
+            <p id="previewBookAuthor" class="text-lg font-serif tracking-widest font-bold text-white">김 영 식</p>
+            <p class="text-[10px] text-amber-200/40 font-mono pt-2">숲길 출판 스튜디오 디지털 에디션</p>
+          </div>
+        </div>
+
+        <!-- 2. 머리말 / 헌정사 페이지 -->
+        <div class="w-full aspect-[1/1.414] bg-[#FDFBF7] text-book-primary rounded-lg p-12 sm:p-16 flex flex-col justify-between book-shadow border border-book-border page-break">
+          <div class="space-y-8 max-w-lg mx-auto my-auto text-center">
+            <h3 class="font-serif text-xl font-bold tracking-widest text-stone-800">머 리 말</h3>
+            <div class="w-8 h-0.5 bg-book-accent/40 mx-auto"></div>
+            <p id="previewBookDedication" class="font-serif text-stone-700 text-sm sm:text-base leading-loose whitespace-pre-line text-justify">
+              이 책을 사랑하는 나의 가족들과 지난 시간 함께 울고 웃었던 소중한 인연들에게 바칩니다.
+              
+              바쁘게 지나온 시간 속에서 잊힐 뻔했던 기억의 조각들을 하나씩 건져 올려 엮었습니다. 내 삶의 모든 계절이 당신들에게 따뜻한 위로이자 지혜가 되기를 소망합니다.
+            </p>
+            <div class="pt-8 text-right font-serif text-xs text-stone-500">
+              저자 <span id="previewDedicationAuthor">김영식</span> 올림
+            </div>
+          </div>
+          <div class="text-center font-serif text-xs text-stone-400">1</div>
+        </div>
+
+        <!-- 3. 목차 페이지 (Table of Contents) -->
+        <div class="w-full aspect-[1/1.414] bg-[#FDFBF7] text-book-primary rounded-lg p-12 sm:p-16 flex flex-col justify-between book-shadow border border-book-border page-break">
+          <div>
+            <div class="text-center space-y-2 mb-10">
+              <h3 class="font-serif text-2xl font-bold tracking-widest text-stone-800">목 차</h3>
+              <p class="text-xs font-serif text-stone-400 italic">Contents</p>
+            </div>
+            
+            <div id="printTocList" class="space-y-3 font-serif text-xs sm:text-sm max-w-xl mx-auto divide-y divide-stone-200/60">
+              <!-- JS 목차 렌더링 -->
+            </div>
+          </div>
+          <div class="text-center font-serif text-xs text-stone-400">2</div>
+        </div>
+
+        <!-- 4. 본문 장/절 렌더링 영역 (동적 생성) -->
+        <div id="printBookBodyEntries" class="space-y-12">
+          <!-- JS에서 각 글을 페이지 단위로 렌더링 -->
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- 글쓰기 / 편집 모달 -->
+  <div id="writeModal" class="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-sm hidden flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+    <div class="bg-white rounded-2xl max-w-3xl w-full p-6 sm:p-8 shadow-2xl border border-book-border my-auto space-y-5">
+      
+      <div class="flex items-center justify-between pb-3 border-b border-book-border">
+        <div class="flex items-center gap-2">
+          <div class="w-7 h-7 rounded-lg bg-amber-100 text-book-accent flex items-center justify-center">
+            <i data-lucide="feather" class="w-4 h-4"></i>
+          </div>
+          <h3 id="modalTitle" class="font-serif font-bold text-lg text-book-primary">기억 한 페이지 쓰기</h3>
+        </div>
+        <button onclick="closeWriteModal()" class="text-stone-400 hover:text-stone-600 p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- 선택된 질문 프롬프트 표시 -->
+      <div id="modalQuestionBox" class="bg-amber-50/70 border border-amber-200/80 rounded-xl p-3.5 space-y-1">
+        <span class="text-[10px] font-bold text-book-accent tracking-wider uppercase">회고 프롬프트</span>
+        <p id="modalQuestionText" class="text-xs sm:text-sm font-serif font-medium text-stone-800">
+          오늘의 질문이 여기에 표시됩니다.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <!-- 챕터 분류 -->
+        <div>
+          <label class="block text-xs font-semibold text-stone-700 mb-1">인생 챕터</label>
+          <select id="entryChapterInput" class="w-full text-xs rounded-xl border border-book-border p-2.5 bg-stone-50 focus:ring-1 focus:ring-book-accent">
+            <option value="childhood">1장: 어린 시절 & 고향</option>
+            <option value="youth">2장: 청춘과 학창시절</option>
+            <option value="love">3장: 사랑과 가족</option>
+            <option value="work">4장: 도전과 일</option>
+            <option value="wisdom">5장: 인생의 교훈</option>
+          </select>
+        </div>
+
+        <!-- 시대 / 대략 연도 -->
+        <div>
+          <label class="block text-xs font-semibold text-stone-700 mb-1">시절 (연도/나이)</label>
+          <input id="entryYearInput" type="text" placeholder="예: 1978년, 20대 초반" class="w-full text-xs rounded-xl border border-book-border p-2.5 bg-stone-50 focus:ring-1 focus:ring-book-accent">
+        </div>
+
+        <!-- 감정/태그 -->
+        <div>
+          <label class="block text-xs font-semibold text-stone-700 mb-1">키워드 / 태그</label>
+          <input id="entryTagInput" type="text" placeholder="예: 첫사랑, 이사, 졸업" class="w-full text-xs rounded-xl border border-book-border p-2.5 bg-stone-50 focus:ring-1 focus:ring-book-accent">
+        </div>
+      </div>
+
+      <!-- 글 제목 -->
+      <div>
+        <label class="block text-xs font-semibold text-stone-700 mb-1">소제목 (이야기 제목)</label>
+        <input id="entryTitleInput" type="text" placeholder="마음에 남는 소제목을 지어주세요" class="w-full text-sm font-serif font-bold rounded-xl border border-book-border p-3 bg-stone-50 focus:ring-1 focus:ring-book-accent">
+      </div>
+
+      <!-- 본문 작성 -->
+      <div>
+        <div class="flex items-center justify-between mb-1">
+          <label class="block text-xs font-semibold text-stone-700">이야기 본문</label>
+          <div class="flex items-center gap-1.5 sm:gap-2">
+            <!-- STT 음성 인식 마이크 버튼 -->
+            <button id="sttMicBtn" type="button" onclick="toggleSpeechRecognition()" class="text-xs px-2.5 py-1 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 font-medium flex items-center gap-1.5 transition border border-stone-200">
+              <i id="sttMicIcon" data-lucide="mic" class="w-3.5 h-3.5 text-stone-600"></i>
+              <span id="sttMicText">말로 구술하기(STT)</span>
+            </button>
+            <!-- AI 보조 버튼 -->
+            <button onclick="aiRefineDraft()" class="text-xs px-2.5 py-1 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-900 font-medium flex items-center gap-1 transition">
+              <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-700"></i>
+              <span>AI 문체 다듬기</span>
+            </button>
+            <button onclick="aiExpandIdeas()" class="text-xs px-2.5 py-1 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 font-medium flex items-center gap-1 transition">
+              <i data-lucide="lightbulb" class="w-3.5 h-3.5 text-stone-500"></i>
+              <span>회상 힌트</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- STT 녹음 중 인디케이터 배너 -->
+        <div id="sttListeningBar" class="hidden mb-2 px-3 py-1.5 bg-rose-50 border border-rose-200 text-rose-700 rounded-lg text-xs flex items-center justify-between animate-pulse">
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>
+            <span class="font-medium">목소리를 듣고 글자로 적는 중입니다... 편안하게 말씀하세요.</span>
+          </div>
+          <button onclick="toggleSpeechRecognition()" class="text-rose-800 font-bold hover:underline">녹음 종료</button>
+        </div>
+
+        <textarea id="entryContentInput" rows="8" placeholder="편안한 마음으로 기억을 적어 내려가거나, 상단의 '말로 구술하기' 마이크를 켜고 이야기해 보세요. 맞춤법이나 정돈되지 않은 구술이라도 'AI 문체 다듬기'가 아름다운 문학작품으로 완성해 드립니다..." class="w-full text-sm font-serif leading-relaxed rounded-xl border border-book-border p-3.5 bg-stone-50 focus:ring-1 focus:ring-book-accent"></textarea>
+      </div>
+
+      <!-- 사진 첨부 (로컬 이미지) -->
+      <div>
+        <label class="block text-xs font-semibold text-stone-700 mb-1">추억의 사진 첨부 (선택)</label>
+        <div class="flex items-center gap-3">
+          <input type="file" id="entryPhotoInput" accept="image/*" onchange="handlePhotoUpload(event)" class="text-xs text-stone-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-stone-100 file:text-stone-700 hover:file:bg-stone-200">
+          <div id="photoPreviewWrap" class="hidden relative w-12 h-12 rounded-lg overflow-hidden border border-stone-200">
+            <img id="entryPhotoPreview" src="" alt="preview" class="w-full h-full object-cover">
+            <button onclick="removeAttachedPhoto()" class="absolute inset-0 bg-black/40 text-white flex items-center justify-center text-xs opacity-0 hover:opacity-100 transition">✕</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI 피드백/제안 알림 박스 (동적 노출) -->
+      <div id="aiSuggestionBox" class="hidden bg-stone-100 border border-stone-300 rounded-xl p-3.5 text-xs space-y-2">
+        <div class="flex items-center justify-between text-stone-700 font-semibold">
+          <span class="flex items-center gap-1.5"><i data-lucide="wand-2" class="w-3.5 h-3.5 text-amber-600"></i> AI 에디터 제안</span>
+          <button onclick="closeAiSuggestion()" class="text-stone-400 hover:text-stone-600">✕</button>
+        </div>
+        <p id="aiSuggestionText" class="text-stone-600 font-serif leading-relaxed"></p>
+        <div class="flex justify-end gap-2 pt-1">
+          <button onclick="applyAiSuggestion()" class="px-3 py-1 rounded bg-book-accent text-white hover:bg-amber-800">이 문체로 적용하기</button>
+        </div>
+      </div>
+
+      <!-- 하단 버튼 바 -->
+      <div class="pt-3 border-t border-book-border flex items-center justify-between">
+        <button id="deleteEntryBtn" onclick="deleteCurrentEntry()" class="hidden px-3 py-2 rounded-xl text-xs text-red-600 hover:bg-red-50 transition flex items-center gap-1">
+          <i data-lucide="trash-2" class="w-4 h-4"></i>
+          <span>삭제하기</span>
+        </button>
+        <div class="flex items-center gap-2 ml-auto">
+          <button onclick="closeWriteModal()" class="px-4 py-2.5 rounded-xl border border-book-border text-xs text-stone-600 hover:bg-stone-100 transition">
+            취소
+          </button>
+          <button onclick="saveEntry()" class="px-5 py-2.5 rounded-xl bg-book-accent hover:bg-amber-800 text-white text-xs font-medium flex items-center gap-1.5 shadow-md transition">
+            <i data-lucide="check" class="w-4 h-4"></i>
+            <span id="saveBtnText">자서전에 저장</span>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- 간단 토스트 메시지 -->
+  <div id="toastMessage" class="fixed bottom-6 right-6 z-50 transform translate-y-20 opacity-0 transition-all duration-300 bg-stone-900 text-white text-xs px-4 py-2.5 rounded-xl shadow-xl flex items-center gap-2 pointer-events-none">
+    <i data-lucide="info" class="w-4 h-4 text-amber-400"></i>
+    <span id="toastText">안내 메시지</span>
+  </div>
+
+  <script>
+    // ==========================================
+    // 1. 질문 라이브러리 (질문 기반 자서전 템플릿)
+    // ==========================================
+    const QUESTIONS_DB = [
+      // 1장: 유년 시절 & 고향
+      { id: 'q1', chapter: 'childhood', text: '내가 태어난 고향 마을과 첫 번째 기억 속 우리 집의 풍경은 어떠했나요?', desc: '마루, 장독대, 대문, 마당에 피던 꽃이나 계절의 냄새를 떠올려보세요.' },
+      { id: 'q2', chapter: 'childhood', text: '어릴 적 골목길이나 동네에서 해질녘까지 함께 뛰어놀던 친구들의 이름을 기억하시나요?', desc: '딱지치기, 고무줄놀이, 숨바꼭질 중 가장 좋아했던 놀이는 무엇이었나요?' },
+      { id: 'q3', chapter: 'childhood', text: '어린 시절 부모님께 가장 크게 칭찬받았거나, 반대로 크게 꾸중을 들었던 사건은 무엇인가요?', desc: '그때 느꼈던 감정과 부모님의 표정이 아직도 남아있나요?' },
+      { id: 'q4', chapter: 'childhood', text: '어머니 혹은 할머니가 정성스레 차려주시던 가장 그리운 음식 한 가지는 무엇인가요?', desc: '따뜻한 찌개, 갓 지은 쌀밥, 혹은 특별한 날에만 먹을 수 있었던 간식 이야기를 적어보세요.' },
+      { id: 'q5', chapter: 'childhood', text: '내 유년기 시절, 세상에서 가장 든든했던 영웅이나 우상은 누구였나요?', desc: '가족, 동네 형, 선생님, 혹은 동화책 속 주인공 누구든 좋습니다.' },
+
+      // 2장: 청춘과 학창시절
+      { id: 'q6', chapter: 'youth', text: '학창 시절 가장 가슴 설레게 좋아했던 과목이나 나를 일깨워준 선생님은 누구인가요?', desc: '수업 시간의 추억, 소풍날의 기억, 첫 교복을 입었을 때의 감회를 적어보세요.' },
+      { id: 'q7', chapter: 'youth', text: '그 시절 라디오나 테이프가 늘어지도록 즐겨 들었던 인생 노래는 무엇이었나요?', desc: '그 음악을 들으면 떠오르는 계절, 친구, 혹은 풋풋한 짝사랑의 기억이 있나요?' },
+      { id: 'q8', chapter: 'youth', text: '학창 시절이나 스무 살 무렵, 친구들과 함께 떠났던 잊지 못할 여행이나 모험은?', desc: '텐트 하나 메고 떠난 바닷가, 기차 여행, 밤새 나눈 수다를 회상해보세요.' },
+      { id: 'q9', chapter: 'youth', text: '젊은 날, 나를 깊이 잠 못 들게 했던 가장 큰 고민이나 꿈은 무엇이었나요?', desc: '세상을 향해 품었던 열정과 불안, 그리고 그 당시의 결심을 기록해보세요.' },
+
+      // 3장: 사랑, 결혼, 그리고 가족
+      { id: 'q10', chapter: 'love', text: '배우자(또는 소중했던 연인)와의 첫 만남과 설레었던 첫인상은 어떠했나요?', desc: '어떤 장소에서 어떤 계절에 만나 서로의 마음을 확인하게 되었나요?' },
+      { id: 'q11', chapter: 'love', text: '결혼식 날의 풍경과 새로운 보금자리를 꾸렸을 때의 벅찬 감정은?', desc: '단칸방이어도 행복했던 시절, 양가 부모님의 눈물, 첫 보금자리의 기억.' },
+      { id: 'q12', chapter: 'love', text: '내 아이가 태어나 처음 품에 안겼던 날, 세상은 어떻게 달라 보였나요?', desc: '갓난아기의 작은 손가락을 만지며 마음속으로 다짐했던 말들을 들려주세요.' },
+      { id: 'q13', chapter: 'love', text: '자녀들을 키우며 가장 뭉클했거나 가슴 벅차올랐던 순간은 언제였나요?', desc: '첫 걸음마, 입학식, 혹은 어느덧 훌쩍 자라 어른이 된 모습을 보았을 때.' },
+
+      // 4장: 일터와 치열했던 도전
+      { id: 'q14', chapter: 'work', text: '사회에 첫발을 내딛고 첫 월급을 받았던 날, 그 돈으로 무엇을 하셨나요?', desc: '부모님 내복 선물, 동생들 학비, 혹은 나를 위한 작은 선물 이야기.' },
+      { id: 'q15', chapter: 'work', text: '내 평생의 직업이나 일터에서 가장 보람찼거나 자랑스러웠던 성취의 순간은?', desc: '남들은 몰라도 나 스스로에게 "정말 잘 해냈다"고 칭찬하고 싶은 날.' },
+      { id: 'q16', chapter: 'work', text: '인생에서 가장 캄캄하고 힘들었던 고난의 파도는 언제였으며, 어떻게 이겨내셨나요?', desc: '사업의 실패, 건강의 위기, 가족의 아픔 속에서 나를 다시 일으켜 세운 힘.' },
+
+      // 5장: 인생의 깨달음 & 후손에게
+      { id: 'q17', chapter: 'wisdom', text: '살아오면서 맺었던 수많은 인간관계 중, 나에게 가장 큰 가르침을 준 사람은?', desc: '은혜를 입었던 고마운 분이나 역경을 통해 인내를 가르쳐준 인연 이야기.' },
+      { id: 'q18', chapter: 'wisdom', text: '긴 세월을 지나오며 내 가슴속에 새겨진 삶의 가장 중요한 신조(좌우명)는?', desc: '후회 없는 삶을 살기 위해 꼭 붙들어야 할 태도나 철학.' },
+      { id: 'q19', chapter: 'wisdom', text: '나의 자녀들과 손주들에게 꼭 전해주고 싶은 인생의 한 줄 조언은 무엇인가요?', desc: '사랑, 돈, 시간, 건강, 행복에 대하여 꼭 들려주고 싶은 진심 어린 당부.' },
+      { id: 'q20', chapter: 'wisdom', text: '먼 훗날, 사람들에게 나는 어떤 사람으로 기억되고 싶은가요?', desc: '따뜻했던 사람, 정직했던 이웃, 든든한 나무 같았던 부모로서의 바람.' }
+    ];
+
+    const CHAPTER_NAMES = {
+      childhood: '1장: 어린 시절 & 고향',
+      youth: '2장: 청춘과 학창시절',
+      love: '3장: 사랑과 가족',
+      work: '4장: 도전과 일',
+      wisdom: '5장: 인생의 교훈'
+    };
+
+    // ==========================================
+    // 2. 상태 관리 (State)
+    // ==========================================
+    let currentDailyIndex = 1; // 오늘 인덱스 기본값
+    let activeChapterFilter = 'all';
+    let entries = [];
+    let editingEntryId = null;
+    let selectedPhotoBase64 = null;
+    let lastAiSuggestedText = null;
+
+    // STT (음성 인식) 상태 및 객체
+    let recognition = null;
+    let isRecordingSTT = false;
+
+    // 책 메타데이터
+    let bookMeta = {
+      title: '나의 삶, 나의 이야기',
+      subtitle: '바람과 세월이 남겨준 기억의 편린들',
+      author: '김영식',
+      dedication: '이 책을 사랑하는 나의 가족들과 지난 시간 함께 울고 웃었던 소중한 인연들에게 바칩니다.\n\n바쁘게 지나온 시간 속에서 잊힐 뻔했던 기억의 조각들을 하나씩 건져 올려 엮었습니다. 내 삶의 모든 계절이 당신들에게 따뜻한 위로이자 지혜가 되기를 소망합니다.',
+      coverTheme: 'classic' // classic, navy, forest, cream
+    };
+
+    // 샘플 초기 데이터 (사용자가 바로 멋진 자서전을 체험할 수 있도록 제공)
+    const INITIAL_SAMPLE_ENTRIES = [
+      {
+        id: 'entry-1',
+        chapter: 'childhood',
+        year: '1962년 (유년기)',
+        tag: '고향, 장독대',
+        title: '감나무 아래 장독대와 어머니의 된장찌개',
+        content: '내가 태어난 곳은 남도의 작은 산골 마을이었다. 마당 한구석에는 가을마다 주홍빛 감이 주렁주렁 열리던 커다란 감나무가 서 있었고, 그 그늘 아래로 크고 작은 옹기 장독들이 정갈하게 줄지어 있었다.\n\n해질녘 고소한 멸치 볶는 냄새와 뚝배기에서 보글보글 끓어오르던 어머니의 된장찌개 냄새는 지금도 눈을 감으면 코끝에 닿는다. 하루 종일 흙바닥에서 자치기를 하다가 흙투성이가 되어 돌아와도, 어머니는 툇마루에서 대야에 따뜻한 물을 받아 내 발을 씻겨주셨다. 그 평화롭고 따스했던 황혼빛은 내 인생 평생을 지켜준 첫 번째 온기였다.',
+        photo: '',
+        createdAt: '2026-10-15T09:00:00.000Z'
+      },
+      {
+        id: 'entry-2',
+        chapter: 'youth',
+        year: '1979년 (스물두 살)',
+        tag: '청춘, 대성리 기차',
+        title: '낡은 통기타와 대성리행 완행열차',
+        content: '청량리역에서 춘천으로 향하는 완행열차는 언제나 청춘들의 웃음소리로 덜컹거렸다. 줄이 하나 끊어진 통기타를 둘러메고 친구 녀석들과 삶은 달걀을 나눠 먹으며 우리는 무엇이 그리도 즐거웠을까.\n\n밤새 강변 모닥불 곁에서 노래를 부르고, 세상에 대한 거창한 고민과 앞날의 두려움을 털어놓던 그 밤. 주머니엔 차비 몇 푼밖에 없었지만, 가슴엔 온 우주를 다 담을 수 있을 만큼 푸르렀던 시절이었다.',
+        photo: '',
+        createdAt: '2026-10-20T14:30:00.000Z'
+      },
+      {
+        id: 'entry-3',
+        chapter: 'wisdom',
+        year: '2026년 오늘',
+        tag: '인생의 지혜, 사랑',
+        title: '바람이 불어도 괜찮다, 뿌리가 깊다면',
+        content: '젊을 적에는 모든 것이 내 뜻대로 풀려야 성공인 줄 알았다. 그러나 칠십 년 넘는 세월을 걸어와 보니, 삶의 가장 큰 축복은 원하는 것을 다 얻는 것이 아니라, 잃었을 때 다시 일어설 수 있는 마음의 평안이었다.\n\n나의 아이들아, 그리고 사랑하는 손주들아. 살아가다 폭풍우를 만나 흔들릴 때마다 조급해하지 마라. 비바람은 나무의 가지를 꺾을 수 있어도 깊이 내린 사랑의 뿌리는 흔들지 못한다. 매일 곁에 있는 사람에게 다정한 말 한마디 건네는 것, 그것이 인간이 남길 수 있는 가장 고결한 유산이다.',
+        photo: '',
+        createdAt: '2026-10-28T18:00:00.000Z'
+      }
+    ];
+
+    // ==========================================
+    // 3. 초기화 & 렌더링
+    // ==========================================
+    window.onload = function() {
+      // 로컬 스토리지 대신 세션 메모리 + 초기 샘플 활용
+      entries = [...INITIAL_SAMPLE_ENTRIES];
+      
+      lucide.createIcons();
+      document.getElementById('totalQuestionsCount').innerText = QUESTIONS_DB.length;
+
+      // 오늘의 질문 초기 설정
+      refreshDailyQuestion();
+      renderQuestionsGrid();
+      renderRecentFeed();
+      renderChaptersList();
+      renderPrintBookView();
+      updateBadge();
+    };
+
+    function updateBadge() {
+      const count = entries.length;
+      document.getElementById('entryCountBadge').innerText = count;
+      document.getElementById('libraryStatCount').innerText = count;
+    }
+
+    // 탭 전환
+    function switchTab(tabId) {
+      const tabs = ['feed', 'chapters', 'publish'];
+      tabs.forEach(t => {
+        const el = document.getElementById(t + 'Tab');
+        if (t === tabId) {
+          el.classList.remove('hidden');
+        } else {
+          el.classList.add('hidden');
+        }
+      });
+
+      // 네비 스타일 활성화
+      const feedBtn = document.getElementById('navFeedBtn');
+      const chaptersBtn = document.getElementById('navChaptersBtn');
+      const publishBtn = document.getElementById('navPublishBtn');
+
+      feedBtn.className = tabId === 'feed' ? "px-3 py-2 rounded-lg text-sm font-medium transition flex items-center gap-1.5 text-book-accent bg-amber-50/80" : "px-3 py-2 rounded-lg text-sm font-medium transition flex items-center gap-1.5 hover:bg-stone-200/50 text-stone-700";
+      chaptersBtn.className = tabId === 'chapters' ? "px-3 py-2 rounded-lg text-sm font-medium transition flex items-center gap-1.5 text-book-accent bg-amber-50/80" : "px-3 py-2 rounded-lg text-sm font-medium transition flex items-center gap-1.5 hover:bg-stone-200/50 text-stone-700";
+
+      if (tabId === 'publish') {
+        renderPrintBookView();
+      }
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // 오늘의 질문 교체
+    function refreshDailyQuestion() {
+      currentDailyIndex = Math.floor(Math.random() * QUESTIONS_DB.length);
+      const q = QUESTIONS_DB[currentDailyIndex];
+      document.getElementById('todayQuestionText').innerText = `"${q.text}"`;
+      document.getElementById('todayQuestionDesc').innerText = q.desc;
+    }
+
+    // 질문 그리드 렌더링
+    function renderQuestionsGrid() {
+      const grid = document.getElementById('questionsGrid');
+      grid.innerHTML = '';
+
+      const filtered = activeChapterFilter === 'all' 
+        ? QUESTIONS_DB 
+        : QUESTIONS_DB.filter(q => q.chapter === activeChapterFilter);
+
+      filtered.forEach(q => {
+        const card = document.createElement('div');
+        card.className = "bg-white p-5 rounded-2xl border border-book-border hover:border-book-accent/50 hover:shadow-md transition flex flex-col justify-between space-y-4 group";
+        card.innerHTML = `
+          <div class="space-y-2">
+            <span class="text-[11px] font-semibold text-book-accent tracking-wider uppercase">${CHAPTER_NAMES[q.chapter]}</span>
+            <h4 class="font-serif font-bold text-stone-800 text-sm leading-snug group-hover:text-book-accent transition">
+              ${q.text}
+            </h4>
+            <p class="text-xs text-stone-500 line-clamp-2">${q.desc}</p>
+          </div>
+          <button onclick="writeForQuestion('${q.id}')" class="w-full mt-2 py-2 rounded-xl bg-stone-50 hover:bg-amber-100/70 text-stone-700 hover:text-amber-900 text-xs font-medium flex items-center justify-center gap-1.5 transition border border-stone-200">
+            <i data-lucide="feather" class="w-3.5 h-3.5"></i>
+            <span>이 질문으로 쓰기</span>
+          </button>
+        `;
+        grid.appendChild(card);
+      });
+      lucide.createIcons();
+    }
+
+    function filterQuestions(chapter) {
+      activeChapterFilter = chapter;
+      document.querySelectorAll('.chapter-btn').forEach(btn => {
+        btn.classList.remove('bg-book-accent', 'text-white');
+        btn.classList.add('bg-white', 'text-stone-600');
+      });
+      event.target.classList.remove('bg-white', 'text-stone-600');
+      event.target.classList.add('bg-book-accent', 'text-white');
+      renderQuestionsGrid();
+    }
+
+    // 최근 피드 렌더링
+    function renderRecentFeed() {
+      const feed = document.getElementById('recentEntriesFeed');
+      feed.innerHTML = '';
+
+      if (entries.length === 0) {
+        feed.innerHTML = `
+          <div class="col-span-full py-12 text-center text-stone-400 bg-white rounded-2xl border border-dashed border-stone-300">
+            <i data-lucide="book-open" class="w-8 h-8 mx-auto mb-2 opacity-50"></i>
+            <p class="text-xs">아직 작성된 자서전 글이 없습니다. 첫 번째 이야기를 적어보세요!</p>
+          </div>
+        `;
+        lucide.createIcons();
+        return;
+      }
+
+      const recent = [...entries].reverse().slice(0, 4);
+      recent.forEach(entry => {
+        const item = document.createElement('div');
+        item.className = "bg-white p-5 rounded-2xl border border-book-border hover:shadow-sm transition flex flex-col justify-between space-y-3 cursor-pointer";
+        item.onclick = () => openEditModal(entry.id);
+        item.innerHTML = `
+          <div class="space-y-2">
+            <div class="flex items-center justify-between text-xs text-stone-500">
+              <span class="px-2 py-0.5 rounded bg-amber-50 text-amber-800 font-medium">${CHAPTER_NAMES[entry.chapter] || '회고록'}</span>
+              <span class="font-mono text-[11px]">${entry.year || '시절미상'}</span>
+            </div>
+            <h4 class="font-serif font-bold text-stone-900 text-base leading-snug hover:text-book-accent transition">
+              ${entry.title}
+            </h4>
+            <p class="text-xs text-stone-600 font-serif leading-relaxed line-clamp-3">
+              ${entry.content}
+            </p>
+          </div>
+          <div class="pt-2 border-t border-stone-100 flex items-center justify-between text-[11px] text-stone-400">
+            <span class="flex items-center gap-1"><i data-lucide="tag" class="w-3 h-3"></i> ${entry.tag || '기억'}</span>
+            <span class="text-book-accent font-medium hover:underline flex items-center gap-1">열어보기 <i data-lucide="arrow-right" class="w-3 h-3"></i></span>
+          </div>
+        `;
+        feed.appendChild(item);
+      });
+      lucide.createIcons();
+    }
+
+    // 나의 서재 챕터별 리스트 렌더링
+    function renderChaptersList() {
+      const container = document.getElementById('entriesListContainer');
+      container.innerHTML = '';
+
+      if (entries.length === 0) {
+        container.innerHTML = `
+          <div class="py-16 text-center text-stone-400 bg-white rounded-2xl border border-dashed border-stone-300">
+            <i data-lucide="pen-tool" class="w-10 h-10 mx-auto mb-3 opacity-40"></i>
+            <p class="text-sm font-medium">서재가 비어 있습니다.</p>
+            <p class="text-xs text-stone-400 mt-1">질문에 답하며 인생의 첫 챕터를 써보세요.</p>
+            <button onclick="openWriteModal()" class="mt-4 px-4 py-2 rounded-xl bg-book-accent text-white text-xs font-medium">새 글 쓰기</button>
+          </div>
+        `;
+        lucide.createIcons();
+        return;
+      }
+
+      entries.forEach((entry, idx) => {
+        const card = document.createElement('div');
+        card.className = "bg-white p-6 rounded-2xl border border-book-border hover:shadow-md transition space-y-4";
+        card.innerHTML = `
+          <div class="flex items-start justify-between gap-4">
+            <div class="space-y-1">
+              <div class="flex items-center gap-2">
+                <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-stone-100 text-stone-700">제 ${idx + 1} 편</span>
+                <span class="text-xs font-medium text-book-accent">${CHAPTER_NAMES[entry.chapter] || '회고록'}</span>
+                <span class="text-xs text-stone-400">| ${entry.year || '연도 미지정'}</span>
+              </div>
+              <h3 class="font-serif font-bold text-lg text-stone-900">${entry.title}</h3>
+            </div>
+            <div class="flex items-center gap-1.5 shrink-0">
+              <button onclick="openEditModal('${entry.id}')" class="p-2 rounded-lg text-stone-500 hover:text-stone-800 hover:bg-stone-100 transition" title="수정">
+                <i data-lucide="edit-2" class="w-4 h-4"></i>
+              </button>
+              <button onclick="quickDeleteEntry('${entry.id}')" class="p-2 rounded-lg text-stone-400 hover:text-red-600 hover:bg-red-50 transition" title="삭제">
+                <i data-lucide="trash-2" class="w-4 h-4"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 ${entry.photo ? 'md:grid-cols-4' : ''} gap-4 items-start">
+            ${entry.photo ? `
+              <div class="md:col-span-1 rounded-xl overflow-hidden border border-stone-200 aspect-[4/3]">
+                <img src="${entry.photo}" alt="memory photo" class="w-full h-full object-cover">
+              </div>
+            ` : ''}
+            <div class="${entry.photo ? 'md:col-span-3' : ''}">
+              <p class="font-serif text-stone-700 text-sm leading-relaxed whitespace-pre-line line-clamp-4">
+                ${entry.content}
+              </p>
+            </div>
+          </div>
+
+          <div class="pt-3 border-t border-stone-100 flex items-center justify-between text-xs text-stone-400">
+            <div class="flex items-center gap-2">
+              <span class="px-2 py-0.5 rounded bg-stone-50 border border-stone-200 text-stone-600"># ${entry.tag || '기억의 조각'}</span>
+            </div>
+            <span class="text-[11px] font-mono text-stone-400">${new Date(entry.createdAt).toLocaleDateString('ko-KR')} 작성</span>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+      lucide.createIcons();
+    }
+
+    // ==========================================
+    // 4. 글쓰기 & 수정 모달 제어
+    // ==========================================
+    function openWriteModal(questionObj = null) {
+      editingEntryId = null;
+      selectedPhotoBase64 = null;
+      lastAiSuggestedText = null;
+
+      document.getElementById('modalTitle').innerText = "기억 한 페이지 쓰기";
+      document.getElementById('saveBtnText').innerText = "자서전에 저장";
+      document.getElementById('deleteEntryBtn').classList.add('hidden');
+      document.getElementById('aiSuggestionBox').classList.add('hidden');
+      stopSpeechRecognition(); // 모달 오픈 시 이전 녹음 정지
+
+      // 입력란 비우기
+      document.getElementById('entryTitleInput').value = '';
+      document.getElementById('entryContentInput').value = '';
+      document.getElementById('entryYearInput').value = '';
+      document.getElementById('entryTagInput').value = '';
+      document.getElementById('entryPhotoInput').value = '';
+      document.getElementById('photoPreviewWrap').classList.add('hidden');
+
+      if (questionObj) {
+        document.getElementById('modalQuestionBox').classList.remove('hidden');
+        document.getElementById('modalQuestionText').innerText = `"${questionObj.text}" (${questionObj.desc})`;
+        document.getElementById('entryChapterInput').value = questionObj.chapter;
+      } else {
+        document.getElementById('modalQuestionBox').classList.add('hidden');
+      }
+
+      document.getElementById('writeModal').classList.remove('hidden');
+    }
+
+    function writeForCurrentDailyQuestion() {
+      const q = QUESTIONS_DB[currentDailyIndex];
+      openWriteModal(q);
+    }
+
+    function writeForQuestion(qId) {
+      const q = QUESTIONS_DB.find(item => item.id === qId);
+      if (q) openWriteModal(q);
+    }
+
+    function openEditModal(id) {
+      const entry = entries.find(e => e.id === id);
+      if (!entry) return;
+
+      editingEntryId = id;
+      selectedPhotoBase64 = entry.photo || null;
+      lastAiSuggestedText = null;
+
+      document.getElementById('modalTitle').innerText = "기록 다듬기 및 수정";
+      document.getElementById('saveBtnText').innerText = "수정사항 저장";
+      document.getElementById('deleteEntryBtn').classList.remove('hidden');
+      document.getElementById('aiSuggestionBox').classList.add('hidden');
+      document.getElementById('modalQuestionBox').classList.add('hidden');
+      stopSpeechRecognition(); // 모달 오픈 시 이전 녹음 정지
+
+      document.getElementById('entryChapterInput').value = entry.chapter;
+      document.getElementById('entryYearInput').value = entry.year || '';
+      document.getElementById('entryTagInput').value = entry.tag || '';
+      document.getElementById('entryTitleInput').value = entry.title || '';
+      document.getElementById('entryContentInput').value = entry.content || '';
+
+      if (entry.photo) {
+        document.getElementById('entryPhotoPreview').src = entry.photo;
+        document.getElementById('photoPreviewWrap').classList.remove('hidden');
+      } else {
+        document.getElementById('photoPreviewWrap').classList.add('hidden');
+      }
+
+      document.getElementById('writeModal').classList.remove('hidden');
+    }
+
+    function closeWriteModal() {
+      stopSpeechRecognition();
+      document.getElementById('writeModal').classList.add('hidden');
+    }
+
+    // ==========================================
+    // 4-1. 음성 인식 (STT: Speech-to-Text) 구술 기능
+    // ==========================================
+    function initSpeechRecognition() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        return null;
+      }
+
+      const rec = new SpeechRecognition();
+      rec.lang = 'ko-KR';
+      rec.continuous = true;
+      rec.interimResults = true;
+
+      rec.onstart = function() {
+        isRecordingSTT = true;
+        updateMicUI(true);
+      };
+
+      rec.onresult = function(event) {
+        let finalTranscripts = '';
+        let interimTranscripts = '';
+
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          const transcript = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            finalTranscripts += transcript + ' ';
+          } else {
+            interimTranscripts += transcript;
+          }
+        }
+
+        if (finalTranscripts) {
+          const textarea = document.getElementById('entryContentInput');
+          const prev = textarea.value;
+          textarea.value = prev ? (prev.trim() + ' ' + finalTranscripts.trim() + ' ') : finalTranscripts;
+          textarea.scrollTop = textarea.scrollHeight;
+        }
+      };
+
+      rec.onerror = function(event) {
+        console.warn('Speech recognition error:', event.error);
+        if (event.error === 'not-allowed') {
+          showToast("마이크 접근 권한이 필요합니다. 브라우저 설정에서 마이크를 허용해주세요.");
+        } else if (event.error !== 'no-speech') {
+          showToast("음성 인식 중 문제가 발생했습니다: " + event.error);
+        }
+        stopSpeechRecognition();
+      };
+
+      rec.onend = function() {
+        if (isRecordingSTT) {
+          // 일시적 중단 시 재시작 시도 (사용자가 종료 버튼을 누르기 전까지)
+          try {
+            rec.start();
+          } catch(e) {
+            stopSpeechRecognition();
+          }
+        } else {
+          updateMicUI(false);
+        }
+      };
+
+      return rec;
+    }
+
+    function toggleSpeechRecognition() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        showToast("현재 브라우저는 음성 인식(STT)을 지원하지 않습니다. Chrome, Edge 또는 Safari 최신 버전을 권장합니다.");
+        return;
+      }
+
+      if (isRecordingSTT) {
+        stopSpeechRecognition();
+        showToast("구술 음성 인식이 종료되었습니다.");
+      } else {
+        startSpeechRecognition();
+      }
+    }
+
+    function startSpeechRecognition() {
+      try {
+        if (!recognition) {
+          recognition = initSpeechRecognition();
+        }
+        if (recognition) {
+          isRecordingSTT = true;
+          recognition.start();
+          showToast("음성 인식을 시작합니다. 마이크에 대고 편안하게 말씀하세요.");
+        }
+      } catch (err) {
+        console.error(err);
+        isRecordingSTT = false;
+        updateMicUI(false);
+      }
+    }
+
+    function stopSpeechRecognition() {
+      isRecordingSTT = false;
+      if (recognition) {
+        try {
+          recognition.stop();
+        } catch(e) {}
+      }
+      updateMicUI(false);
+    }
+
+    function updateMicUI(listening) {
+      const btn = document.getElementById('sttMicBtn');
+      const icon = document.getElementById('sttMicIcon');
+      const text = document.getElementById('sttMicText');
+      const bar = document.getElementById('sttListeningBar');
+
+      if (!btn || !icon || !text || !bar) return;
+
+      if (listening) {
+        btn.className = "text-xs px-2.5 py-1 rounded-lg bg-rose-500 hover:bg-rose-600 text-white font-medium flex items-center gap-1.5 transition shadow-sm animate-pulse";
+        icon.className = "w-3.5 h-3.5 text-white";
+        text.innerText = "구술 중단하기";
+        bar.classList.remove('hidden');
+      } else {
+        btn.className = "text-xs px-2.5 py-1 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 font-medium flex items-center gap-1.5 transition border border-stone-200";
+        icon.className = "w-3.5 h-3.5 text-stone-600";
+        text.innerText = "말로 구술하기(STT)";
+        bar.classList.add('hidden');
+      }
+      lucide.createIcons();
+    }
+
+    // 사진 첨부 핸들링
+    function handlePhotoUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        selectedPhotoBase64 = event.target.result;
+        document.getElementById('entryPhotoPreview').src = selectedPhotoBase64;
+        document.getElementById('photoPreviewWrap').classList.remove('hidden');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function removeAttachedPhoto() {
+      selectedPhotoBase64 = null;
+      document.getElementById('entryPhotoInput').value = '';
+      document.getElementById('photoPreviewWrap').classList.add('hidden');
+    }
+
+    // 글 저장 (추가 or 수정)
+    function saveEntry() {
+      const title = document.getElementById('entryTitleInput').value.trim();
+      const content = document.getElementById('entryContentInput').value.trim();
+      const chapter = document.getElementById('entryChapterInput').value;
+      const year = document.getElementById('entryYearInput').value.trim();
+      const tag = document.getElementById('entryTagInput').value.trim();
+
+      if (!title || !content) {
+        showToast("제목과 이야기 본문을 모두 작성해주세요.");
+        return;
+      }
+
+      if (editingEntryId) {
+        // 기존 수정
+        const index = entries.findIndex(e => e.id === editingEntryId);
+        if (index !== -1) {
+          entries[index] = {
+            ...entries[index],
+            title,
+            content,
+            chapter,
+            year,
+            tag,
+            photo: selectedPhotoBase64 || entries[index].photo
+          };
+          showToast("자서전 기록이 수정되었습니다.");
+        }
+      } else {
+        // 신규 추가
+        const newEntry = {
+          id: 'entry-' + Date.now(),
+          chapter,
+          year,
+          tag,
+          title,
+          content,
+          photo: selectedPhotoBase64 || '',
+          createdAt: new Date().toISOString()
+        };
+        entries.push(newEntry);
+        showToast("소중한 기억이 자서전에 등록되었습니다!");
+      }
+
+      closeWriteModal();
+      renderRecentFeed();
+      renderChaptersList();
+      renderPrintBookView();
+      updateBadge();
+    }
+
+    function deleteCurrentEntry() {
+      if (!editingEntryId) return;
+      entries = entries.filter(e => e.id !== editingEntryId);
+      closeWriteModal();
+      renderRecentFeed();
+      renderChaptersList();
+      renderPrintBookView();
+      updateBadge();
+      showToast("기록이 삭제되었습니다.");
+    }
+
+    function quickDeleteEntry(id) {
+      entries = entries.filter(e => e.id !== id);
+      renderRecentFeed();
+      renderChaptersList();
+      renderPrintBookView();
+      updateBadge();
+      showToast("기록이 삭제되었습니다.");
+    }
+
+    // ==========================================
+    // 5. Gemini AI 회고 에디터 연동
+    // ==========================================
+    async function aiRefineDraft() {
+      const currentContent = document.getElementById('entryContentInput').value.trim();
+      const currentTitle = document.getElementById('entryTitleInput').value.trim();
+
+      if (!currentContent) {
+        showToast("다듬을 이야기 본문을 먼저 몇 줄 작성해주세요.");
+        return;
+      }
+
+      showToast("AI 에디터가 자서전 문체로 정성껏 다듬고 있습니다...");
+
+      const systemPrompt = "당신은 세계적인 자서전 전문 작가이자 따뜻한 수필가입니다. 사용자가 적은 기억의 단편과 구술 초안을 받아, 원래의 사실과 진심을 해치지 않으면서 책으로 인쇄되었을 때 깊은 울림을 주는 품격 있는 문학적 수필 어조(따뜻하고 담백한 경어체 또는 정갈한 회고체)로 다듬어주세요. 오직 다듬어진 완성 본문 텍스트만 출력하세요.";
+      const userPrompt = `[소제목: ${currentTitle || '기억의 조각'}]\n\n[초안 원문]:\n${currentContent}`;
+
+      try {
+        const apiKey = "";
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+        const payload = {
+          contents: [{ parts: [{ text: userPrompt }] }],
+          systemInstruction: { parts: [{ text: systemPrompt }] }
+        };
+
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const result = await response.json();
+        const refinedText = result.candidates?.[0]?.content?.parts?.[0]?.text;
+
+        if (refinedText) {
+          lastAiSuggestedText = refinedText;
+          document.getElementById('aiSuggestionText').innerText = refinedText;
+          document.getElementById('aiSuggestionBox').classList.remove('hidden');
+          showToast("AI 문체 교정이 완성되었습니다. 아래 제안을 확인하세요.");
+        } else {
+          showToast("문체 제안을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.");
+        }
+      } catch (err) {
+        // 네트워크 장애 시 휴리스틱 폴백 가이드
+        fallbackRefine(currentContent);
+      }
+    }
+
+    function fallbackRefine(content) {
+      const politeContent = content
+        .replace(/했다\./g, '했었다.')
+        .replace(/이다\./g, '이었다.')
+        .replace(/봤다\./g, '바라보았다.');
+      lastAiSuggestedText = politeContent + "\n\n(※ 세월의 결을 담아 다듬은 회고 텍스트입니다.)";
+      document.getElementById('aiSuggestionText').innerText = lastAiSuggestedText;
+      document.getElementById('aiSuggestionBox').classList.remove('hidden');
+    }
+
+    async function aiExpandIdeas() {
+      const chapter = document.getElementById('entryChapterInput').value;
+      const title = document.getElementById('entryTitleInput').value.trim() || '나의 기억';
+
+      showToast("회상에 도움이 되는 감각적 힌트를 생성 중입니다...");
+
+      const systemPrompt = "자서전 글쓰기 코치입니다. 사용자가 그 시절의 구체적인 감각(냄새, 소리, 사람들의 대사, 풍경)을 더 풍부하게 떠올릴 수 있도록 돕는 3가지 질문 질문/힌트를 다정하고 짧게 제시하세요.";
+      const userPrompt = `챕터: ${CHAPTER_NAMES[chapter]}, 이야기 주제: ${title}`;
+
+      try {
+        const apiKey = "";
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+        const payload = {
+          contents: [{ parts: [{ text: userPrompt }] }],
+          systemInstruction: { parts: [{ text: systemPrompt }] }
+        };
+
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const result = await response.json();
+        const hints = result.candidates?.[0]?.content?.parts?.[0]?.text;
+
+        if (hints) {
+          lastAiSuggestedText = null;
+          document.getElementById('aiSuggestionText').innerText = hints;
+          document.getElementById('aiSuggestionBox').classList.remove('hidden');
+        }
+      } catch (e) {
+        document.getElementById('aiSuggestionText').innerText = "💡 회상 팁: 1) 그때 들리던 바람이나 사람들의 말소리는 어땠나요? 2) 손에 닿았던 물건의 감촉은 어떠했나요? 3) 지금의 내가 그 시절의 나에게 해주고 싶은 말은 무엇인가요?";
+        document.getElementById('aiSuggestionBox').classList.remove('hidden');
+      }
+    }
+
+    function applyAiSuggestion() {
+      if (lastAiSuggestedText) {
+        document.getElementById('entryContentInput').value = lastAiSuggestedText;
+        showToast("제안된 문장으로 본문이 교체되었습니다.");
+      }
+      closeAiSuggestion();
+    }
+
+    function closeAiSuggestion() {
+      document.getElementById('aiSuggestionBox').classList.add('hidden');
+    }
+
+    // ==========================================
+    // 6. 책 출판 & 인쇄 (PDF) 뷰 렌더링
+    // ==========================================
+    function renderPrintBookView() {
+      // 1) 표지 및 서문 업데이트
+      document.getElementById('previewBookTitle').innerText = bookMeta.title;
+      document.getElementById('previewBookSubtitle').innerText = bookMeta.subtitle;
+      document.getElementById('previewBookAuthor').innerText = bookMeta.author;
+      document.getElementById('previewDedicationAuthor').innerText = bookMeta.author;
+      document.getElementById('previewBookDedication').innerText = bookMeta.dedication;
+
+      // 2) 목차 (TOC) 생성
+      const tocList = document.getElementById('printTocList');
+      tocList.innerHTML = '';
+
+      if (entries.length === 0) {
+        tocList.innerHTML = `<p class="py-4 text-center text-stone-400">아직 등록된 본문이 없습니다.</p>`;
+      } else {
+        entries.forEach((entry, idx) => {
+          const item = document.createElement('div');
+          item.className = "py-2.5 flex items-center justify-between text-stone-700";
+          item.innerHTML = `
+            <div class="flex items-center gap-3 truncate">
+              <span class="text-stone-400 font-mono text-xs w-6">${idx + 1}.</span>
+              <span class="font-medium truncate">${entry.title}</span>
+            </div>
+            <span class="text-stone-400 font-mono text-xs shrink-0 ml-4">${idx + 3} page</span>
+          `;
+          tocList.appendChild(item);
+        });
+      }
+
+      // 3) 본문 페이지 생성 (인쇄용 표준 레이아웃)
+      const bodyContainer = document.getElementById('printBookBodyEntries');
+      bodyContainer.innerHTML = '';
+
+      entries.forEach((entry, idx) => {
+        const pageEl = document.createElement('div');
+        pageEl.className = "w-full aspect-[1/1.414] bg-[#FDFBF7] text-book-primary rounded-lg p-12 sm:p-16 flex flex-col justify-between book-shadow border border-book-border page-break";
+        
+        pageEl.innerHTML = `
+          <div>
+            <!-- 상단 헤더 러닝 헤드 -->
+            <div class="flex items-center justify-between border-b border-stone-200 pb-3 text-xs text-stone-400 font-serif">
+              <span>${bookMeta.title}</span>
+              <span>${CHAPTER_NAMES[entry.chapter] || '회고록'}</span>
+            </div>
+
+            <!-- 본문 타이틀 영역 -->
+            <div class="pt-8 pb-6 space-y-2">
+              <div class="flex items-center gap-2 text-xs font-serif text-book-accent">
+                <span>제 ${idx + 1} 화</span>
+                <span>•</span>
+                <span>${entry.year || '기억의 시간'}</span>
+              </div>
+              <h2 class="text-2xl sm:text-3xl font-serif font-bold text-stone-900 leading-tight">
+                ${entry.title}
+              </h2>
+            </div>
+
+            <!-- 사진이 있는 경우 본문 상단 배치 -->
+            ${entry.photo ? `
+              <div class="mb-6 max-h-56 w-full rounded-lg overflow-hidden border border-stone-200 bg-stone-100 flex items-center justify-center">
+                <img src="${entry.photo}" alt="memory" class="w-full h-full object-cover">
+              </div>
+            ` : ''}
+
+            <!-- 본문 텍스트 (양면 서적 레이아웃) -->
+            <div class="font-serif text-stone-800 text-sm sm:text-base leading-loose whitespace-pre-line text-justify tracking-normal">
+              ${entry.content}
+            </div>
+          </div>
+
+          <!-- 하단 페이지 번호 -->
+          <div class="text-center font-serif text-xs text-stone-400 pt-6">
+            ${idx + 3}
+          </div>
+        `;
+
+        bodyContainer.appendChild(pageEl);
+      });
+    }
+
+    // 표지 테마 설정
+    function setCoverTheme(theme) {
+      bookMeta.coverTheme = theme;
+      const cover = document.getElementById('bookCoverCard');
+      if (theme === 'classic') {
+        cover.style.backgroundColor = '#2C241E';
+        cover.style.color = '#FDE68A';
+      } else if (theme === 'navy') {
+        cover.style.backgroundColor = '#162238';
+        cover.style.color = '#E2E8F0';
+      } else if (theme === 'forest') {
+        cover.style.backgroundColor = '#1D3328';
+        cover.style.color = '#D1FAE5';
+      } else if (theme === 'cream') {
+        cover.style.backgroundColor = '#F5EFE6';
+        cover.style.color = '#382F27';
+      }
+      showToast("표지 스타일이 적용되었습니다.");
+    }
+
+    function toggleCoverCustomizer() {
+      const panel = document.getElementById('coverCustomizerPanel');
+      panel.classList.toggle('hidden');
+    }
+
+    function updateBookMeta() {
+      bookMeta.title = document.getElementById('bookTitleInput').value.trim() || '나의 삶, 나의 이야기';
+      bookMeta.subtitle = document.getElementById('bookSubtitleInput').value.trim() || '';
+      bookMeta.author = document.getElementById('bookAuthorInput').value.trim() || '저자';
+      bookMeta.dedication = document.getElementById('bookDedicationInput').value.trim() || '';
+      renderPrintBookView();
+    }
+
+    // 실제 인쇄 & 브라우저 PDF 저장 호출
+    function printBook() {
+      if (entries.length === 0) {
+        showToast("인쇄할 자서전 글이 없습니다. 먼저 글을 작성해주세요.");
+        return;
+      }
+      showToast("인쇄 창을 엽니다. 프린터 대상을 'PDF로 저장'으로 선택하시면 PDF 전자책이 생성됩니다.");
+      setTimeout(() => {
+        window.print();
+      }, 500);
+    }
+
+    // JSON 백업 다운로드
+    function exportJSONBackup() {
+      const data = {
+        meta: bookMeta,
+        entries: entries,
+        exportedAt: new Date().toISOString()
+      };
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `나의_자서전_원고_${new Date().toISOString().slice(0,10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast("자서전 전체 원고 데이터가 파일로 안전하게 백업되었습니다.");
+    }
+
+    // ==========================================
+    // 7. 검색 & 필터링 & 유틸
+    // ==========================================
+    function handleSearch() {
+      const keyword = document.getElementById('searchInput').value.toLowerCase().trim();
+      if (!keyword) {
+        renderChaptersList();
+        return;
+      }
+
+      const filtered = entries.filter(e => 
+        e.title.toLowerCase().includes(keyword) || 
+        e.content.toLowerCase().includes(keyword) ||
+        (e.tag && e.tag.toLowerCase().includes(keyword)) ||
+        (e.year && e.year.toLowerCase().includes(keyword))
+      );
+
+      const container = document.getElementById('entriesListContainer');
+      container.innerHTML = '';
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="py-12 text-center text-stone-400 bg-white rounded-2xl border border-stone-200">
+            <p class="text-xs">"${keyword}" 검색 결과가 없습니다.</p>
+          </div>
+        `;
+        return;
+      }
+
+      // 재사용 렌더
+      filtered.forEach((entry, idx) => {
+        const card = document.createElement('div');
+        card.className = "bg-white p-5 rounded-2xl border border-book-border hover:shadow-md transition space-y-3";
+        card.innerHTML = `
+          <div class="flex items-center justify-between">
+            <h4 class="font-serif font-bold text-stone-900">${entry.title}</h4>
+            <span class="text-xs text-book-accent">${entry.year || ''}</span>
+          </div>
+          <p class="font-serif text-xs text-stone-600 line-clamp-3">${entry.content}</p>
+          <div class="flex justify-end gap-2">
+            <button onclick="openEditModal('${entry.id}')" class="text-xs text-stone-500 hover:text-stone-800">편집</button>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function filterEntriesByChapter(chapter) {
+      if (chapter === 'all') {
+        renderChaptersList();
+        return;
+      }
+      const filtered = entries.filter(e => e.chapter === chapter);
+      const container = document.getElementById('entriesListContainer');
+      container.innerHTML = '';
+      filtered.forEach((entry, idx) => {
+        const card = document.createElement('div');
+        card.className = "bg-white p-6 rounded-2xl border border-book-border space-y-3";
+        card.innerHTML = `
+          <div class="flex items-center justify-between">
+            <h4 class="font-serif font-bold text-stone-900">${entry.title}</h4>
+            <button onclick="openEditModal('${entry.id}')" class="text-xs text-stone-500 hover:underline">수정</button>
+          </div>
+          <p class="font-serif text-sm text-stone-700 leading-relaxed">${entry.content}</p>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function sortEntries(criteria) {
+      if (criteria === 'newest') {
+        entries.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      } else if (criteria === 'timeline') {
+        // 연대순
+        entries.sort((a, b) => (a.year || '').localeCompare(b.year || ''));
+      }
+      renderChaptersList();
+      renderPrintBookView();
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toastMessage');
+      const text = document.getElementById('toastText');
+      text.innerText = msg;
+      toast.classList.remove('translate-y-20', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+      setTimeout(() => {
+        toast.classList.remove('translate-y-0', 'opacity-100');
+        toast.classList.add('translate-y-20', 'opacity-0');
+      }, 3500);
+    }
+  </script>
+</body>
+</html>
